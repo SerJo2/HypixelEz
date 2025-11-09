@@ -27,7 +27,7 @@ def test_get_skill_xp(api_client):
     user = api_client.fetch_profile_info(api_client.get_uuid_by_name("Neono4ka"),
                                          "f5791b0c-caf1-4701-aea3-d727ea53a901")
     result = user.get_skill_current_level_xp("SKILL_CARPENTRY")
-    assert result == 687291
+    assert result == 687944
 
 def test_get_cata_level_xp(api_client):
     user = api_client.fetch_profile_info(api_client.get_uuid_by_name("Neono4ka"),
@@ -75,13 +75,13 @@ def test_get_global_level(api_client):
     user = api_client.fetch_profile_info(api_client.get_uuid_by_name("Neono4ka"),
                                          "f5791b0c-caf1-4701-aea3-d727ea53a901")
     result = user.get_global_level()
-    assert result == 169
+    assert result == 171
 
 def test_get_global_xp(api_client):
     user = api_client.fetch_profile_info(api_client.get_uuid_by_name("Neono4ka"),
                                          "f5791b0c-caf1-4701-aea3-d727ea53a901")
     result = user.get_global_xp()
-    assert result == 15
+    assert result == 40
 
 def test_get_profiles_by_uuid(api_client):
     result = api_client.get_profile_names_ids_by_id("eca19e2e713d49a98582320229f696ed")

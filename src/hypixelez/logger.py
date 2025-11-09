@@ -1,8 +1,15 @@
 import logging
 import sys
+from logging import Logger
 
 
 def setup_logging(debug=False):
+    """Setup logging
+
+    Args:
+        debug: If true logging warning/info. Otherwise, logging only Warning/Error
+
+    """
 
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
@@ -23,5 +30,14 @@ def setup_logging(debug=False):
         logging.getLogger().setLevel(logging.WARNING)
 
 
-def get_logger(name):
+def get_logger(name: str) -> Logger:
+    """Return logger
+
+    Args:
+        name: Logger name
+
+    Returns:
+        Logger: logger
+
+    """
     return logging.getLogger(name)
