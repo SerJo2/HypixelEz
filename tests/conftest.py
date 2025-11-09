@@ -29,18 +29,14 @@ def mock_profile_data():
     from .mocks import MOCK_PROFILE_DATA
     from src.hypixelez.hypixel_api import SkyblockProfileData
 
-    return SkyblockProfileData(
-        MOCK_PROFILE_DATA,
-        "eca19e2e713d49a98582320229f696ed"
-    )
+    return SkyblockProfileData(MOCK_PROFILE_DATA, "eca19e2e713d49a98582320229f696ed")
 
 
 @pytest.fixture
 def mock_requests():
     """Fixture to mock requests"""
-    with patch('requests.get') as mock_get, \
-            patch('requests.Session.get') as mock_session_get:
-        yield {
-            'get': mock_get,
-            'session_get': mock_session_get
-        }
+    with (
+        patch("requests.get") as mock_get,
+        patch("requests.Session.get") as mock_session_get,
+    ):
+        yield {"get": mock_get, "session_get": mock_session_get}

@@ -6,56 +6,56 @@ _DEBUG_ = True
 _LOGGER_NAME_ = "hypixelez"
 
 _CATA_CUMULATIVE_XP_ = [
-50,
-125,
-235,
-395,
-625,
-955,
-1425,
-2095,
-3045,
-4385,
-6275,
-8940,
-12700,
-17960,
-25340,
-35640,
-50040,
-70040,
-97640,
-135640,
-188140,
-259640,
-356640,
-488640,
-668640,
-911640,
-1239640,
-1684640,
-2284640,
-3084640,
-4149640,
-5559640,
-7459640,
-9959640,
-13259640,
-17559640,
-23159640,
-30359640,
-39559640,
-51559640,
-66559640,
-85559640,
-109559640,
-139559640,
-177559640,
-225559640,
-285559640,
-360559640,
-453559640,
-569809640
+    50,
+    125,
+    235,
+    395,
+    625,
+    955,
+    1425,
+    2095,
+    3045,
+    4385,
+    6275,
+    8940,
+    12700,
+    17960,
+    25340,
+    35640,
+    50040,
+    70040,
+    97640,
+    135640,
+    188140,
+    259640,
+    356640,
+    488640,
+    668640,
+    911640,
+    1239640,
+    1684640,
+    2284640,
+    3084640,
+    4149640,
+    5559640,
+    7459640,
+    9959640,
+    13259640,
+    17559640,
+    23159640,
+    30359640,
+    39559640,
+    51559640,
+    66559640,
+    85559640,
+    109559640,
+    139559640,
+    177559640,
+    225559640,
+    285559640,
+    360559640,
+    453559640,
+    569809640,
 ]
 
 _SKILL_CUMULATIVE_LEVELS_ = [
@@ -119,11 +119,11 @@ _SKILL_CUMULATIVE_LEVELS_ = [
     91572425,
     97972425,
     104672425,
-    111672425
+    111672425,
 ]
 
 _SKILL_LEVEL_UP_LEVELS_ = {
-0,
+    0,
     50,
     125,
     200,
@@ -183,7 +183,7 @@ _SKILL_LEVEL_UP_LEVELS_ = {
     6100000,
     6400000,
     6700000,
-    7000000
+    7000000,
 }
 
 
@@ -204,11 +204,14 @@ def _calculate_current_xp(xp: int, cumulative_levels: list) -> int:
 
 
 class HypixelClient:
-    """Client for interacting with the Hypixel API
+    """Client for interacting with the Hypixel API"""
 
-    """
-
-    def __init__(self, api_key: str, debug=_DEBUG_, base_url="https://api.hypixel.net/v2/skyblock/profile"):
+    def __init__(
+        self,
+        api_key: str,
+        debug=_DEBUG_,
+        base_url="https://api.hypixel.net/v2/skyblock/profile",
+    ):
         """Init HypixelClient
 
         Args:
@@ -239,17 +242,18 @@ class HypixelClient:
             return self._uuid_cache[name]
 
         try:
-            response = requests.get(f"https://api.mojang.com/users/profiles/minecraft/{name}", timeout=10)
+            response = requests.get(
+                f"https://api.mojang.com/users/profiles/minecraft/{name}", timeout=10
+            )
             response.raise_for_status()
             data = response.json()
 
-            if 'id' not in data:
+            if "id" not in data:
                 self.logger.warning(f"UUID not found for player: {name}")
                 return None
-            self._uuid_cache[name] = data['id']
+            self._uuid_cache[name] = data["id"]
             self.logger.debug(f"Cached UUID for: {name}")
             return self._uuid_cache[name]
-
 
         except requests.exceptions.RequestException as e:
             self.logger.error(f"Failed to fetch UUID for {name}: {e}")
@@ -266,24 +270,23 @@ class HypixelClient:
         headers = {
             "API-Key": self.api_key,
         }
-        params = {
-            "uuid": uuid
-        }
+        params = {"uuid": uuid}
 
-        response = self.session.get("https://api.hypixel.net/v2/skyblock/profiles", headers=headers, params=params).json()
+        response = self.session.get(
+            "https://api.hypixel.net/v2/skyblock/profiles",
+            headers=headers,
+            params=params,
+        ).json()
         x = response["profiles"]
 
-        names = {
-
-        }
+        names = {}
 
         for i in x:
             names[i["cute_name"]] = i["profile_id"]
 
         return names
 
-
-    def fetch_profile_info(self, uuid: str, profile: str) :
+    def fetch_profile_info(self, uuid: str, profile: str):
         """Fetch profile info from Hypixel Api
 
         Args:
@@ -296,16 +299,12 @@ class HypixelClient:
         headers = {
             "API-Key": self.api_key,
         }
-        params = {
-            "uuid": uuid,
-            "profile": profile
-        }
+        params = {"uuid": uuid, "profile": profile}
 
         try:
             response = self.session.get(self.base_url, headers=headers, params=params)
             response.raise_for_status()
             data = response.json()
-
 
             if not data["success"]:
                 raise Exception(f"API Error: {data.get('cause', 'Unknown error')}")
@@ -314,10 +313,9 @@ class HypixelClient:
         except requests.exceptions.RequestException as e:
             raise e
 
-class SkyblockProfileData:
-    """Class for storing SkyBlock profile data with methods to extract specific information
 
-    """
+class SkyblockProfileData:
+    """Class for storing SkyBlock profile data with methods to extract specific information"""
 
     def __init__(self, raw_data, uuid):
         """Initialize SkyblockProfileData
@@ -340,11 +338,12 @@ class SkyblockProfileData:
             int: Collection stats if found. Get a 0 instead
         """
         try:
-            return self._data["profile"]["members"][self._uuid]["collection"][collection_name]
+            return self._data["profile"]["members"][self._uuid]["collection"][
+                collection_name
+            ]
         except (KeyError, ValueError):
             self._logger.warning(f"Collection '{collection_name}' not found")
             return 0
-
 
     def get_slayer_stats(self, slayer_name) -> list:
         """Get slayer kills stats
@@ -357,9 +356,15 @@ class SkyblockProfileData:
         """
         try:
             stats = list()
-            for i in self._data["profile"]["members"][self._uuid]["slayer"]["slayer_bosses"][slayer_name]:
+            for i in self._data["profile"]["members"][self._uuid]["slayer"][
+                "slayer_bosses"
+            ][slayer_name]:
                 if "boss_kills_tier" in i:
-                    stats.append(self._data["profile"]["members"][self._uuid]["slayer"]["slayer_bosses"][slayer_name][i])
+                    stats.append(
+                        self._data["profile"]["members"][self._uuid]["slayer"][
+                            "slayer_bosses"
+                        ][slayer_name][i]
+                    )
             return stats
         except (KeyError, ValueError):
             self._logger.warning(f"Slayer '{slayer_name}' not found")
@@ -375,8 +380,12 @@ class SkyblockProfileData:
             int: Skill level if found. Get a 0 instead
         """
         try:
-            xp = int(self._data["profile"]["members"][self._uuid]["player_data"]["experience"][skill_name])
-            return _calculate_level(xp, _SKILL_CUMULATIVE_LEVELS_)-1
+            xp = int(
+                self._data["profile"]["members"][self._uuid]["player_data"][
+                    "experience"
+                ][skill_name]
+            )
+            return _calculate_level(xp, _SKILL_CUMULATIVE_LEVELS_) - 1
         except (KeyError, ValueError):
             self._logger.warning(f"Skill '{skill_name}' not found")
             return 0
@@ -392,7 +401,10 @@ class SkyblockProfileData:
         """
         try:
             xp = int(
-                self._data["profile"]["members"][self._uuid]["player_data"]["experience"][skill_name])
+                self._data["profile"]["members"][self._uuid]["player_data"][
+                    "experience"
+                ][skill_name]
+            )
 
             return _calculate_current_xp(xp, _SKILL_CUMULATIVE_LEVELS_)
         except (KeyError, ValueError):
@@ -407,7 +419,11 @@ class SkyblockProfileData:
 
         """
         try:
-            xp = int(self._data["profile"]["members"][self._uuid]["dungeons"]["dungeon_types"]["catacombs"]["experience"])
+            xp = int(
+                self._data["profile"]["members"][self._uuid]["dungeons"][
+                    "dungeon_types"
+                ]["catacombs"]["experience"]
+            )
             return _calculate_current_xp(xp, _CATA_CUMULATIVE_XP_)
         except (KeyError, ValueError):
             self._logger.warning(f"Catacomb not found")
@@ -420,11 +436,16 @@ class SkyblockProfileData:
             int: Catacombs level if found. Get a 0 instead
         """
         try:
-            xp = int(self._data["profile"]["members"][self._uuid]["dungeons"]["dungeon_types"]["catacombs"]["experience"])
+            xp = int(
+                self._data["profile"]["members"][self._uuid]["dungeons"][
+                    "dungeon_types"
+                ]["catacombs"]["experience"]
+            )
             return _calculate_level(xp, _CATA_CUMULATIVE_XP_)
         except (KeyError, ValueError):
             self._logger.warning(f"Catacomb not found")
             return 0
+
     def get_cata_class_xp(self, class_name) -> int:
         """Get catacomb class xp
 
@@ -435,7 +456,11 @@ class SkyblockProfileData:
             int: Catacomb class xp if found. Get a 0 instead
         """
         try:
-            xp = int(self._data["profile"]["members"][self._uuid]["dungeons"]["player_classes"][class_name]["experience"])
+            xp = int(
+                self._data["profile"]["members"][self._uuid]["dungeons"][
+                    "player_classes"
+                ][class_name]["experience"]
+            )
             return _calculate_current_xp(xp, _CATA_CUMULATIVE_XP_)
         except (KeyError, ValueError):
             self._logger.warning(f"Class '{class_name}' not found")
@@ -451,7 +476,11 @@ class SkyblockProfileData:
             int: Class level if found. Get a 0 instead
         """
         try:
-            xp = int(self._data["profile"]["members"][self._uuid]["dungeons"]["player_classes"][class_name]["experience"])
+            xp = int(
+                self._data["profile"]["members"][self._uuid]["dungeons"][
+                    "player_classes"
+                ][class_name]["experience"]
+            )
             return _calculate_level(xp, _CATA_CUMULATIVE_XP_)
         except (KeyError, ValueError):
             self._logger.warning(f"Class '{class_name}' not found")
@@ -467,7 +496,9 @@ class SkyblockProfileData:
             int: Slayer xp if found. Get a 0 instead
         """
         try:
-            slayer_data = self._data["profile"]["members"][self._uuid]["slayer"]["slayer_bosses"][slayer_name]
+            slayer_data = self._data["profile"]["members"][self._uuid]["slayer"][
+                "slayer_bosses"
+            ][slayer_name]
             return slayer_data.get("xp", 0)  # Явно обращаемся к полю xp
         except KeyError:
             return 0
@@ -482,8 +513,9 @@ class SkyblockProfileData:
             int: Level of slayer if found. Get a 0 instead
         """
         try:
-            claimed_levels = self._data["profile"]["members"][self._uuid]["slayer"]["slayer_bosses"][slayer_name].get(
-                "claimed_levels", {})
+            claimed_levels = self._data["profile"]["members"][self._uuid]["slayer"][
+                "slayer_bosses"
+            ][slayer_name].get("claimed_levels", {})
             max_level = 0
 
             for level_key in claimed_levels:
@@ -509,7 +541,7 @@ class SkyblockProfileData:
             int: Kill stats if found. Get a 0 instead
         """
         try:
-            return self.get_slayer_stats(slayer_name)[tier-1]
+            return self.get_slayer_stats(slayer_name)[tier - 1]
         except (KeyError, ValueError):
             self._logger.warning(f"Slayer '{slayer_name}' with tier '{tier}' not found")
             return 0
@@ -539,8 +571,3 @@ class SkyblockProfileData:
         except (KeyError, ValueError):
             self._logger.warning(f"Global xp not found")
             return 0
-
-
-
-
-

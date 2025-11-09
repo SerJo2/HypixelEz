@@ -1,6 +1,7 @@
 """
 Tests using mock data
 """
+
 import pytest
 from unittest.mock import Mock, patch
 from src.hypixelez.hypixel_api import HypixelClient, SkyblockProfileData
@@ -10,7 +11,7 @@ from .mocks import *
 class TestWithMocks:
     """Test cases using mock data"""
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_get_uuid_with_mock(self, mock_get):
         """Test UUID lookup with mock data"""
         # Setup mock
@@ -26,11 +27,10 @@ class TestWithMocks:
         # Assertions
         assert uuid == "eca19e2e713d49a98582320229f696ed"
         mock_get.assert_called_once_with(
-            "https://api.mojang.com/users/profiles/minecraft/Neono4ka",
-            timeout=10
+            "https://api.mojang.com/users/profiles/minecraft/Neono4ka", timeout=10
         )
 
-    @patch('requests.Session.get')
+    @patch("requests.Session.get")
     def test_fetch_profile_with_mock(self, mock_session_get):
         """Test profile fetching with mock data"""
         # Setup mock
@@ -42,8 +42,7 @@ class TestWithMocks:
         # Test
         client = HypixelClient(api_key="test_key")
         profile_data = client.fetch_profile_info(
-            "eca19e2e713d49a98582320229f696ed",
-            "f5791b0c-caf1-4701-aea3-d727ea53a901"
+            "eca19e2e713d49a98582320229f696ed", "f5791b0c-caf1-4701-aea3-d727ea53a901"
         )
 
         # Assertions
@@ -52,7 +51,7 @@ class TestWithMocks:
         assert profile_data.get_skill_level("SKILL_CARPENTRY") == 27
         mock_session_get.assert_called_once()
 
-    @patch('requests.Session.get')
+    @patch("requests.Session.get")
     def test_api_error_handling(self, mock_session_get):
         """Test API error handling with mock"""
         # Setup error mock
@@ -67,7 +66,7 @@ class TestWithMocks:
         with pytest.raises(Exception, match="API Error: Invalid API key"):
             client.fetch_profile_info("test_uuid", "test_profile")
 
-    @patch('requests.Session.get')
+    @patch("requests.Session.get")
     def test_missing_data_handling(self, mock_session_get):
         """Test handling of missing data with mock"""
         # Setup empty data mock
@@ -92,8 +91,7 @@ class TestSkyblockProfileDataWithMocks:
     def setup_method(self):
         """Setup test with mock data"""
         self.profile_data = SkyblockProfileData(
-            MOCK_PROFILE_DATA,
-            "eca19e2e713d49a98582320229f696ed"
+            MOCK_PROFILE_DATA, "eca19e2e713d49a98582320229f696ed"
         )
 
     def test_collection_methods(self):
@@ -127,26 +125,23 @@ class TestSkyblockProfileDataWithMocks:
         assert self.profile_data.get_global_xp() == 15
 
 
-@pytest.mark.parametrize("xp,expected_level", [
-    (0, 0),  # No XP = level 0
-    (50, 1),  # Exactly at level 1 threshold
-    (100, 1),  # Between level 1 and 2
-    (14926, 11),  # High XP
-    (999999999, 60)  # Max level
-])
+@pytest.mark.parametrize(
+    "xp,expected_level",
+    [
+        (0, 0),  # No XP = level 0
+        (50, 1),  # Exactly at level 1 threshold
+        (100, 1),  # Between level 1 and 2
+        (14926, 11),  # High XP
+        (999999999, 60),  # Max level
+    ],
+)
 def test_skill_level_calculation(xp, expected_level):
     """Test skill level calculation with various XP values"""
     # Create mock data with specific XP
     mock_data = {
         "profile": {
             "members": {
-                "test_uuid": {
-                    "player_data": {
-                        "experience": {
-                            "TEST_SKILL": xp
-                        }
-                    }
-                }
+                "test_uuid": {"player_data": {"experience": {"TEST_SKILL": xp}}}
             }
         }
     }

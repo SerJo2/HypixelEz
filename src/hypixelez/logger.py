@@ -17,12 +17,12 @@ def setup_logging(debug=False):
     if debug:
         logging.basicConfig(
             level=logging.DEBUG,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
             handlers=[
-                logging.FileHandler('app.log', encoding='utf-8'),
-                logging.StreamHandler(sys.stdout)  # Вывод в консоль
-            ]
+                logging.FileHandler("app.log", encoding="utf-8"),
+                logging.StreamHandler(sys.stdout),  # Вывод в консоль
+            ],
         )
         logging.getLogger().info("Логирование в debug режиме включено")
     else:

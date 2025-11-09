@@ -1,6 +1,7 @@
 """
 Test edge cases and error scenarios
 """
+
 import pytest
 from unittest.mock import Mock, patch
 from src.hypixelez.hypixel_api import HypixelClient, SkyblockProfileData
@@ -9,7 +10,7 @@ from src.hypixelez.hypixel_api import HypixelClient, SkyblockProfileData
 class TestEdgeCases:
     """Test edge cases and error handling"""
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_uuid_not_found(self, mock_get):
         """Test when UUID is not found"""
         mock_response = Mock()
@@ -22,7 +23,7 @@ class TestEdgeCases:
 
         assert result is None
 
-    @patch('requests.Session.get')
+    @patch("requests.Session.get")
     def test_network_error(self, mock_session_get):
         """Test network error handling"""
         mock_session_get.side_effect = Exception("Network error")
@@ -32,14 +33,11 @@ class TestEdgeCases:
         with pytest.raises(Exception, match="Network error"):
             client.fetch_profile_info("test_uuid", "test_profile")
 
-    @patch('requests.Session.get')
+    @patch("requests.Session.get")
     def test_rate_limit_handling(self, mock_session_get):
         """Test rate limit error handling"""
         mock_response = Mock()
-        mock_response.json.return_value = {
-            "success": False,
-            "cause": "Key throttle"
-        }
+        mock_response.json.return_value = {"success": False, "cause": "Key throttle"}
         mock_response.raise_for_status = Mock()
         mock_session_get.return_value = mock_response
 
@@ -62,10 +60,8 @@ class TestPerformance:
 
     def test_uuid_caching(self, mock_requests):
         """Test that UUID caching works"""
-        mock_requests['get'].return_value.json.return_value = {
-            'id': 'test_uuid'
-        }
-        mock_requests['get'].return_value.raise_for_status = Mock()
+        mock_requests["get"].return_value.json.return_value = {"id": "test_uuid"}
+        mock_requests["get"].return_value.raise_for_status = Mock()
 
         client = HypixelClient(api_key="test_key")
 
@@ -77,4 +73,4 @@ class TestPerformance:
 
         assert uuid1 == uuid2 == "test_uuid"
         # Should only make one actual request
-        assert mock_requests['get'].call_count == 1
+        assert mock_requests["get"].call_count == 1
