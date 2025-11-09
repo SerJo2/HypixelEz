@@ -13,4 +13,4 @@ def test_version():
     with open("pyproject.toml", "rb") as f:
         data = tomllib.load(f)
     version = data["project"]["version"]
-    assert version == "1.0.0"
+    assert version == "1.0.1"
