@@ -20,6 +20,12 @@ A modern Python library for easy interaction with the Hypixel API, specifically 
 ```bash
 pip install hypixelez
 ```
+
+## Documentations:
+
+### Build Docs:
+`python -m sphinx -b html docs\source docs\build\html`
+
 ## Quick Start
 ``` python
 from hypixelez import HypixelClient
