@@ -1,5 +1,6 @@
 import requests
 
+from .constants import CollectionKey
 from .logger import setup_logging, get_logger
 
 _DEBUG_ = True
@@ -188,7 +189,16 @@ _SKILL_LEVEL_UP_LEVELS_ = {
 
 
 def _calculate_level(xp: int, cumulative_levels: list) -> int:
-    """Calculate level based on XP and cumulative requirements."""
+    """Calculate the level for a given XP using a cumulative XP table.
+
+    Args:
+        xp: Total accumulated XP.
+        cumulative_levels: A list where each item is the cumulative XP required
+            to reach the corresponding level index.
+
+    Returns:
+        The computed level as an integer index (0-based relative to the table).
+    """
     for i, required_xp in enumerate(cumulative_levels):
         if required_xp > xp:
             return i
@@ -196,7 +206,18 @@ def _calculate_level(xp: int, cumulative_levels: list) -> int:
 
 
 def _calculate_current_xp(xp: int, cumulative_levels: list) -> int:
-    """Calculate current level XP."""
+    """Calculate current XP progress within the current level.
+
+    This returns how much XP the player has earned toward the next level,
+    not the total XP.
+
+    Args:
+        xp: Total accumulated XP.
+        cumulative_levels: A list of cumulative XP thresholds.
+
+    Returns:
+        XP accumulated within the current level.
+    """
     level = _calculate_level(xp, cumulative_levels)
     if level == 0:
         return xp
@@ -204,7 +225,10 @@ def _calculate_current_xp(xp: int, cumulative_levels: list) -> int:
 
 
 class HypixelClient:
-    """Client for interacting with the Hypixel API"""
+    """HTTP client for the Hypixel SkyBlock API.
+
+    This client also supports resolving Minecraft usernames to UUIDs via Mojang API.
+    """
 
     def __init__(
         self,
@@ -212,12 +236,16 @@ class HypixelClient:
         debug=_DEBUG_,
         base_url="https://api.hypixel.net/v2/skyblock/profile",
     ):
-        """Init HypixelClient
+        """Create a Hypixel API client.
 
         Args:
-            api_key: API key from https://developer.hypixel.net/
-            debug: is logging debug/info
-            base_url: base url for request
+            api_key: Hypixel API key (get one at https://developer.hypixel.net/).
+            debug: If True, enables debug logging; otherwise uses info-level logging.
+            base_url: Hypixel endpoint used by :meth:`fetch_profile_info`.
+
+        Notes:
+            - Initializes an internal `requests.Session`.
+            - Maintains an in-memory UUID cache for `get_uuid_by_name`.
         """
         setup_logging(debug)
         self.logger = get_logger(_LOGGER_NAME_)
@@ -228,13 +256,20 @@ class HypixelClient:
         self.base_url = base_url
 
     def get_uuid_by_name(self, name: str) -> str | None:
-        """Get uuid by name from mojang API
+        """Resolve a Minecraft username to a UUID using Mojang API.
+
+        The result is cached in-memory for the lifetime of the client.
 
         Args:
-            name: Minecraft name
+            name: Minecraft username.
 
         Returns:
-            None if not found. UUID if found
+            The UUID string if found; otherwise None.
+            Returns None also in case of network errors.
+
+        Notes:
+            This method currently swallows `requests` exceptions and returns None
+            instead of raising.
         """
 
         if name in self._uuid_cache:
@@ -260,12 +295,20 @@ class HypixelClient:
             return None
 
     def get_profile_names_ids_by_id(self, uuid: str) -> dict:
-        """
+        """Get available SkyBlock profiles for a player UUID.
+
         Args:
-            uuid (str): Minecraft uuid
+            uuid: Minecraft UUID.
 
         Returns:
-            dict: {profile_name: profile_id}
+            A mapping ``{profile_name: profile_id}``, where profile_name is
+            the Hypixel "cute_name" (e.g. "Peach"), and profile_id is the profile id.
+
+        Raises:
+            requests.RequestException: If the underlying HTTP request fails.
+
+        Notes:
+            This method currently assumes the response contains a ``"profiles"`` key.
         """
         headers = {
             "API-Key": self.api_key,
@@ -287,14 +330,22 @@ class HypixelClient:
         return names
 
     def fetch_profile_info(self, uuid: str, profile: str):
-        """Fetch profile info from Hypixel Api
+        """Fetch full SkyBlock profile data and wrap it in :class:`SkyblockProfileData`.
 
         Args:
-            uuid (str): Minecraft uuid
-            profile: (str): Profile id
+            uuid: Minecraft UUID.
+            profile: SkyBlock profile id.
 
         Returns:
-            SkyblockProfileData: full info of profile
+            A :class:`SkyblockProfileData` instance with the raw API response and UUID.
+
+        Raises:
+            requests.RequestException: For network issues or non-2xx HTTP status.
+            Exception: If Hypixel returns ``success=false`` (API-level error).
+
+        Notes:
+            On API-level errors the code currently raises a generic `Exception`.
+            Consider introducing a custom exception type for better UX and docs.
         """
         headers = {
             "API-Key": self.api_key,
@@ -315,27 +366,32 @@ class HypixelClient:
 
 
 class SkyblockProfileData:
-    """Class for storing SkyBlock profile data with methods to extract specific information"""
+    """Wrapper around Hypixel SkyBlock profile JSON with convenience getters.
+
+    Most getter methods are "safe": if the requested data is missing, they return
+    a default value (usually 0 or an empty list) and log a warning.
+    """
 
     def __init__(self, raw_data, uuid):
-        """Initialize SkyblockProfileData
+        """Create a profile data wrapper.
 
         Args:
-            raw_data: Profile data
-            uuid: Minecraft uuid
+            raw_data: Full JSON response from Hypixel profile endpoint.
+            uuid: Minecraft UUID of the requested player (used to select member data).
         """
         self._data = raw_data
         self._uuid = uuid
         self._logger = get_logger(_LOGGER_NAME_)
 
-    def get_collection(self, collection_name: str) -> int:
-        """Get collection
+    def get_collection(self, collection_name: CollectionKey | str) -> int:
+        """Get the amount collected for a specific collection.
 
         Args:
-            collection_name: Name of collection
+            collection_name: Collection key (e.g. "LOG", "WHEAT").
+                Full list: :class:`~hypixelez.constants.CollectionKey`.
 
         Returns:
-            int: Collection stats if found. Get a 0 instead
+            Collection amount if present, otherwise 0.
         """
         try:
             return self._data["profile"]["members"][self._uuid]["collection"][
@@ -346,13 +402,18 @@ class SkyblockProfileData:
             return 0
 
     def get_slayer_stats(self, slayer_name) -> list:
-        """Get slayer kills stats
+        """Get slayer boss kill statistics by tiers.
 
         Args:
-            slayer_name: For witch slayer get stats
+            slayer_name: Slayer id (e.g. "zombie", "spider", "wolf", ...).
 
         Returns:
-            List with slayer kills if slayer found. Get a [] instead
+            A list of tier kill counts if present, otherwise an empty list.
+
+        Notes:
+            The current implementation iterates over keys inside the slayer dict and
+            appends values for keys that contain ``"boss_kills_tier"``.
+            If you need stable ordering (tier1..tierN), consider sorting keys.
         """
         try:
             stats = list()
@@ -371,13 +432,13 @@ class SkyblockProfileData:
             return []
 
     def get_skill_level(self, skill_name) -> int:
-        """Get skill level
+        """Get the current level for a given SkyBlock skill.
 
         Args:
-            skill_name: Skill name
+            skill_name: Skill XP key (e.g. "SKILL_CARPENTRY").
 
         Returns:
-            int: Skill level if found. Get a 0 instead
+            Skill level if present, otherwise 0.
         """
         try:
             xp = int(
@@ -391,13 +452,13 @@ class SkyblockProfileData:
             return 0
 
     def get_skill_current_level_xp(self, skill_name) -> int:
-        """Get a current xp for skill
+        """Get XP progress within the current level for a given skill.
 
         Args:
-            skill_name: Skill name
+            skill_name: Skill XP key (e.g. "SKILL_CARPENTRY").
 
         Returns:
-            int: Current skill xp if found. Get a 0 instead
+            Current level XP progress if present, otherwise 0.
         """
         try:
             xp = int(
@@ -412,11 +473,10 @@ class SkyblockProfileData:
             return 0
 
     def get_cata_xp(self) -> int:
-        """Get catacomb xp
+        """Get Catacombs XP progress within the current Catacombs level.
 
         Returns:
-             int: Get a catacomb xp if found. Get a 0 instead
-
+            Current Catacombs level XP progress if present, otherwise 0.
         """
         try:
             xp = int(
@@ -430,10 +490,10 @@ class SkyblockProfileData:
             return 0
 
     def get_cata_level(self) -> int:
-        """Get catacomb level
+        """Get the Catacombs level.
 
         Returns:
-            int: Catacombs level if found. Get a 0 instead
+            Catacombs level if present, otherwise 0.
         """
         try:
             xp = int(
@@ -447,13 +507,13 @@ class SkyblockProfileData:
             return 0
 
     def get_cata_class_xp(self, class_name) -> int:
-        """Get catacomb class xp
+        """Get dungeon class XP progress within the current class level.
 
         Args:
-            class_name: Name of class
+            class_name: Dungeon class id (e.g. "mage", "berserk", "archer", "tank", "healer").
 
         Returns:
-            int: Catacomb class xp if found. Get a 0 instead
+            Current class level XP progress if present, otherwise 0.
         """
         try:
             xp = int(
@@ -467,13 +527,13 @@ class SkyblockProfileData:
             return 0
 
     def get_cata_class_level(self, class_name) -> int:
-        """Get catacomb class level
+        """Get the dungeon class level.
 
         Args:
-            class_name: Name of class
+            class_name: Dungeon class id (e.g. "mage", "berserk", "archer", "tank", "healer").
 
         Returns:
-            int: Class level if found. Get a 0 instead
+            Class level if present, otherwise 0.
         """
         try:
             xp = int(
@@ -487,13 +547,13 @@ class SkyblockProfileData:
             return 0
 
     def get_slayer_xp(self, slayer_name) -> int:
-        """Get slayer xp
+        """Get total slayer XP for a specific slayer.
 
         Args:
-            slayer_name: Name of slayer
+            slayer_name: Slayer id (e.g. "zombie", "spider", "wolf", ...).
 
         Returns:
-            int: Slayer xp if found. Get a 0 instead
+            Total slayer XP if present, otherwise 0.
         """
         try:
             slayer_data = self._data["profile"]["members"][self._uuid]["slayer"][
@@ -504,13 +564,13 @@ class SkyblockProfileData:
             return 0
 
     def get_slayer_level(self, slayer_name) -> int:
-        """Get slayer level
+        """Get the slayer level derived from claimed levels.
 
         Args:
-            slayer_name: Name of slayer
+            slayer_name: Slayer id (e.g. "zombie", "spider", "wolf", ...).
 
         Returns:
-            int: Level of slayer if found. Get a 0 instead
+            Highest claimed slayer level if present, otherwise 0.
         """
         try:
             claimed_levels = self._data["profile"]["members"][self._uuid]["slayer"][
@@ -531,14 +591,17 @@ class SkyblockProfileData:
             return 0
 
     def get_slayer_stats_by_tier(self, slayer_name, tier) -> int:
-        """Get kill stats for slayer by tier
+        """Get slayer boss kill count for a specific tier.
 
         Args:
-            slayer_name: Name of slayer
-            tier: Slayer tier
+            slayer_name: Slayer id (e.g. "zombie", "spider", "wolf", ...).
+            tier: Tier number (1-indexed). For example, tier=1 means "tier I".
 
         Returns:
-            int: Kill stats if found. Get a 0 instead
+            Kill count for the requested tier if present, otherwise 0.
+
+        Notes:
+            If `tier` is out of range, the implementation will fall back to 0.
         """
         try:
             return self.get_slayer_stats(slayer_name)[tier - 1]
@@ -547,10 +610,13 @@ class SkyblockProfileData:
             return 0
 
     def get_global_level(self) -> int:
-        """Get global skyblock level
+        """Get the global SkyBlock level.
 
         Returns:
-            int: Global skyblock level if found. Get a 0 instead
+            Global level if present, otherwise 0.
+
+        Notes:
+            The current implementation derives level as ``experience // 100``.
         """
         try:
             xp = self._data["profile"]["members"][self._uuid]["leveling"]["experience"]
@@ -560,10 +626,13 @@ class SkyblockProfileData:
             return 0
 
     def get_global_xp(self) -> int:
-        """Get current skyblock xp
+        """Get XP progress within the current global SkyBlock level.
 
         Returns:
-            int: Current skyblock xp if found. Get a 0 instead
+            Current global level XP progress if present, otherwise 0.
+
+        Notes:
+            The current implementation derives progress as ``experience % 100``.
         """
         try:
             xp = self._data["profile"]["members"][self._uuid]["leveling"]["experience"]
