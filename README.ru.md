@@ -20,6 +20,13 @@
 ```bash
 pip install hypixelez
 ```
+
+## Документация
+[Docs](https://serjo2.github.io/HypixelEz/)
+
+### Сборка документации
+`python -m sphinx -b html docs\source docs\build\html`
+
 ## Быстрый старт
 ``` python
 from hypixelez import HypixelClient

@@ -22,6 +22,7 @@ pip install hypixelez
 ```
 
 ## Documentations:
+[Docs](https://serjo2.github.io/HypixelEz/)
 
 ### Build Docs:
 `python -m sphinx -b html docs\source docs\build\html`
