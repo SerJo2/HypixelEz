@@ -10,7 +10,7 @@ license = {text = "MIT"}
 authors = [
   {name = "Onii-Chan", email = "skobochki.ad@mail.ru"}
 ]
-version = "1.0.1"
+version = "1.0.2"
 
 requires-python = ">=3.9"
 classifiers = [
